@@ -2,14 +2,22 @@
 
 Incidente: [issue #59](https://github.com/Iniciativas-Alexendros/saas-afiladocs/issues/59).
 
+## Decisión de owner (2026-09-23)
+
+**Supabase canónico = Vercel Marketplace Free (freemium), linkado al proyecto `afiladocs`.** No hay VPS. **No** se restaura ni se opera `supabase.afiladocs.com` (self-hosted / Kong / Let's Encrypt). Ese hostname queda **descatalogado** como destino actual.
+
+Las env (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `DIRECT_URL`) las **inyecta el Marketplace** al linkar el recurso al proyecto. El repo **no inventa** ni commitea claves.
+
 ## Estado actual
 
 Sondeo verificado el **2026-09-23 ~16:40 UTC** (no restaurado):
 
-- `afiladocs.com` (frontal Next.js en Vercel): **no saludable**. DNS resuelve (`64.29.17.65` / `216.198.79.65`). HTTPS responde **500** con `server: Vercel` y `x-vercel-error: MIDDLEWARE_INVOCATION_FAILED`. El edge está vivo; el middleware de la app falla.
-- `www.afiladocs.com`: mismo **500** / `MIDDLEWARE_INVOCATION_FAILED`.
-- `supabase.afiladocs.com` (Supabase self-hosted con Kong + Let's Encrypt): **caído**. DNS resuelve (`191.96.53.6`). HTTPS y `/auth/v1/health` **timeout** (~15 s, HTTP 000).
-- Este incidente es **P0**. El código puede dejar de lanzar 500 opaco en edge, pero **no restaura** URL/Key ni el host de Supabase. Eso es out-of-band (dashboard Vercel + host / Marketplace).
+- `afiladocs.com` (frontal Next.js en Vercel): **no saludable**. DNS resuelve. HTTPS **500** `x-vercel-error: MIDDLEWARE_INVOCATION_FAILED`.
+- `www.afiladocs.com`: mismo **500**.
+- `supabase.afiladocs.com`: DNS aún resuelve (`191.96.53.6`) y timeout/TLS, pero **ya no es el target**. No invertir tiempo en el VPS.
+- Marketplace **Supabase Free Plan** existe en el team (`icfg_ncZ1V6hd68mpGSC0vA2HBns4`) y **no está linkado** al proyecto `afiladocs` (`projects: []`). Por eso faltan anon key y URLs de BD en Production.
+
+El middleware (merge #60) falla cerrado si faltan env públicas: 503 controlado en rutas de auth, skip en páginas públicas. **No restaura** el frontal hasta que Marketplace inyecte las keys y se redespliegue.
 
 ## Causa confirmada (runtime, no inventar secretos)
 
@@ -19,18 +27,16 @@ Deploy production **READY** `dpl_DH8JkqbqDCEkbwqbCkVUNKemJs7J` (commit `17665b4f
 Error: Your project's URL and Key are required to create a Supabase client!
 ```
 
-Inventario Vercel del proyecto (34 envs), **sin valores** (este doc no contiene secretos):
+Inventario Vercel (34 envs), **sin valores**:
 
 | Variable | Production | Notas |
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | presente | No basta: el cliente exige URL **y** Key |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **ausente** | Causa directa del throw en `createServerClient` |
-| `SUPABASE_SERVICE_ROLE_KEY` | **ausente** | Necesaria para Storage / ops server-side |
-| `DATABASE_URL` / `DIRECT_URL` | vacías o no inyectadas | Prisma en runtime; Marketplace no está linkado |
+| `SUPABASE_SERVICE_ROLE_KEY` | **ausente** | Storage / ops server-side |
+| `DATABASE_URL` / `DIRECT_URL` | vacías o no inyectadas | Prisma runtime; Marketplace sin link |
 
-Acción out-of-band (no commitear claves): añadir en Vercel Production al menos `NEXT_PUBLIC_SUPABASE_ANON_KEY` (y `SUPABASE_SERVICE_ROLE_KEY` + `DATABASE_URL` / `DIRECT_URL` si el frontal debe servir tienda/portal). Redesplegar. Restaurar TLS de `supabase.afiladocs.com` o linkar el recurso Marketplace al proyecto `afiladocs`. **No inventar** valores de anon/service key en el repo.
-
-El middleware ahora, si faltan esas env públicas: no llama a `createServerClient`, registra `middleware.supabase_env_missing`, sirve **503 controlado** en `/portal` `/ops` `/login` `/registro` `/recuperar-password` y APIs no-infra, y **salta** el refresh de sesión en páginas públicas + `/api/health` `/api/webhooks/*` `/api/cron/*`.
+**Acción:** en Vercel → proyecto `afiladocs` → Storage / Integrations → linkar **Supabase Free Plan** al proyecto (Preview + Production). Dejar que el Marketplace escriba las env. Redesplegar `main`. **No pegar placeholders ni inventar JWT.**
 
 ## Impacto de negocio
 
@@ -38,48 +44,39 @@ El middleware ahora, si faltan esas env públicas: no llama a `createServerClien
 - Portal cliente, backoffice `/ops`, API routes, webhooks y crons fuera de servicio.
 - No se procesan pagos (Stripe), firmas (DocuSeal) ni facturas (Verifactu).
 
-## Checklist de recuperación de infraestructura
+## Checklist de recuperación (path freemium)
 
-### 1. Vercel (`afiladocs.com`)
+### 1. Vercel Marketplace → proyecto `afiladocs`
 
-- [ ] Acceder al proyecto en el dashboard de Vercel.
-- [ ] Revisar últimos deploys, builds fallidos y errores de runtime.
-- [ ] Re-desplegar manualmente desde `main` si el último deploy es inestable.
-- [ ] Comprobar dominios personalizados: `afiladocs.com` y `www.afiladocs.com`.
-- [ ] Verificar certificados SSL y renovación automática en Vercel.
-- [ ] Revisar Edge Config / variables de entorno si el arranque falla.
-- [ ] Añadir `NEXT_PUBLIC_SUPABASE_ANON_KEY` en Production (valor real del proyecto Supabase; no placeholder).
-- [ ] Añadir `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL` y `DIRECT_URL` si siguen ausentes.
-- [ ] Redesplegar `main` tras poblar env. Confirmar que edge-middleware ya no lanza "URL and Key are required".
+- [ ] Confirmar el recurso **Supabase Free Plan** en el team (`alexendros-team`).
+- [ ] Linkarlo al proyecto `afiladocs` (no dejar `projects: []`).
+- [ ] Verificar que Marketplace inyecta, al menos: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `DIRECT_URL` en Production (y Preview).
+- [ ] No crear keys a mano en el repo. Si alguna env vieja apunta a `supabase.afiladocs.com`, sustituirla por la URL `*.supabase.co` que inyecte Marketplace.
+- [ ] Redesplegar `main`. Confirmar que edge-middleware ya no lanza "URL and Key are required".
 
-### 2. Supabase self-hosted (`supabase.afiladocs.com`)
+### 2. Vercel frontal (`afiladocs.com`)
 
-- [ ] Acceder al servidor host del despliegue self-hosted.
-- [ ] Revisar estado de los contenedores/servicios: `kong`, `auth`, `rest`, `postgrest`, `realtime`, `storage`, `postgres`, `vector`, etc.
-- [ ] Inspeccionar logs de Docker Compose / Kubernetes.
-- [ ] Verificar certificados Let's Encrypt y su renovación (`kong` / reverse proxy).
-- [ ] Comprobar salud de PostgreSQL: conectividad, espacio en disco, locks, WAL.
-- [ ] Validar variables de entorno y secretos en el host (`env`, vault, etc.).
-- [ ] Revisar firewall y puertos expuestos: 443 (Kong), 5432 (directa), 6543 (pooler) según topología.
+- [ ] Revisar últimos deploys y runtime logs (el 500 opaco debe desaparecer tras el link + redeploy; con #60 se espera 503/skip si aún faltan env).
+- [ ] Comprobar dominios `afiladocs.com` / `www.afiladocs.com` y certificado.
+- [ ] Smoke: `/` no es `MIDDLEWARE_INVOCATION_FAILED`.
 
-### 3. DNS / CDN
+### 3. `supabase.afiladocs.com` (descatalogado)
 
-- [ ] Confirmar registros A/CNAME de `afiladocs.com` y `supabase.afiladocs.com`.
-- [ ] Verificar TTL, propagación y resolución DNS.
-- [ ] Comprobar reglas de firewall / WAF si aplica.
+- [x] **No restaurar.** Sin VPS. Hostname legacy; ignorar timeout/TLS.
+- [ ] Opcional más adelante: quitar el registro DNS si molesta monitores. No es bloqueante.
 
-### 4. Observabilidad y alertas
+### 4. Observabilidad
 
-- [ ] Revisar Sentry, Vercel Analytics y cualquier monitor de uptime.
-- [ ] Comprobar alertas de n8n y canales de notificación configurados.
+- [ ] Sentry / Vercel Analytics / monitores: dejar de alertar `supabase.afiladocs.com` como P0.
+- [ ] Tras el link, validar Auth + Postgres del proyecto Marketplace (dashboard Supabase cloud).
 
 ### 5. Validación post-recuperación
 
 - [ ] Smoke test de home, tienda, ficha de producto, checkout (modo test), login y portal.
-- [ ] Verificar recepción y procesamiento de webhooks de Stripe y DocuSeal.
-- [ ] Comprobar ejecución de crons en Vercel.
-- [ ] Validar conectividad de la app a Supabase Auth y base de datos.
+- [ ] Webhooks Stripe y DocuSeal.
+- [ ] Crons Vercel.
+- [ ] Conectividad de la app a Supabase Auth y base de datos **cloud** (no Kong self-hosted).
 
 ## Nota
 
-Este archivo se crea en la rama `fix/seguridad-fase-1` como **documentación del incidente P0**. Los fixes de seguridad de esta rama no restauran la infraestructura; requieren intervención manual directa en Vercel y en el host de Supabase.
+Los PRs de Actions y fail-closed de middleware no inyectan secretos. La recuperación es **link Marketplace + redeploy**.

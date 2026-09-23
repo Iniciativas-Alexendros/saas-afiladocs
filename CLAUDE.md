@@ -12,7 +12,7 @@
 
 **Modelo de negocio:** tienda B2C de plantillas legales rellenables vía DocuSeal + revisiones expertas humanas. Pivote desde consultoría a tienda consolidado el 2026-04-14. Catálogo vive en tabla Prisma `products` (no en whitelist de env vars). Checkout Stripe → Verifactu → DocuSeal → descarga firmada en portal.
 
-**Producción:** Vercel (`cdg1`) · dominio `afiladocs.com` activo · Supabase self-hosted en `supabase.afiladocs.com` (Kong + Let's Encrypt R13) · Stripe en modo LIVE pendiente de poblar catálogo.
+**Producción:** Vercel (`cdg1`) · dominio `afiladocs.com` · **Supabase = Vercel Marketplace Free** (freemium, linkado al proyecto `afiladocs`; `supabase.afiladocs.com` descatalogado, sin VPS) · Stripe en modo LIVE pendiente de poblar catálogo.
 
 **Próximo hito bloqueante:** P0b go-live Stripe LIVE (crear 10 productos + 10 templates DocuSeal y mapearlos vía `/ops/productos`). Ver §"P0b — Go-live Stripe LIVE".
 
@@ -276,8 +276,8 @@ Al añadir una plantilla nueva: componente `.tsx` + test snapshot + test del han
 | `NEXT_PUBLIC_SUPABASE_URL` | Client+Server | URL proyecto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client+Server | Clave anónima Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server | Operaciones privilegiadas (admin, Storage signed URLs) |
-| `DATABASE_URL` | Server | Supavisor pooler (puerto 6543, queries runtime) |
-| `DIRECT_URL` | Server | Puerto 5432, migraciones Prisma |
+| `DATABASE_URL` | Server | Pooler Prisma (inyectado por Marketplace; runtime) |
+| `DIRECT_URL` | Server | Directo Prisma (inyectado por Marketplace; migraciones) |
 | `RESEND_API_KEY` | Server | Clave API Resend |
 | `DOCUSEAL_API_URL` | Server | URL base DocuSeal self-hosted |
 | `DOCUSEAL_API_KEY` | Server | API key DocuSeal |

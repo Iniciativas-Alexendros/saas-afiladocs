@@ -1,6 +1,6 @@
 # Manual de Deploy — Afiladocs
 
-**Última revisión:** 2026-04-15
+**Última revisión:** 2026-09-23
 
 Documento único con los requisitos que exige cada entorno (local, CI, Vercel Preview y Vercel Prod), el checklist obligatorio antes de hacer push, y el registro vivo de fallos frecuentes. Si un PR rompe este contrato, CI debe detectarlo antes del merge.
 
@@ -36,7 +36,7 @@ Las variables se agrupan por el papel que cumplen. Columnas:
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | `https://afiladocs.com` | **no definir** (noindex) | `https://afiladocs.com` |
 | `OBSERVABILITY_SENTRY_AUTH_TOKEN` | — | — | auto | auto |
 
-Fuente canónica: [src/lib/env.ts](../src/lib/env.ts). El script [scripts/check-env-example.ts](../scripts/check-env-example.ts) valida en CI que cada variable referenciada ahí esté en [.env.example](../.env.example).
+Fuente canónica: [src/lib/env.ts](../src/lib/env.ts). El script [scripts/check-env-example.ts](../scripts/check-env-example.ts) valida en CI que cada variable referenciada ahí esté en [.env.example](../.env.example). En Preview/Prod, las vars de Supabase y Prisma las inyecta **Vercel Marketplace Free** al linkar el recurso al proyecto `afiladocs` (no self-hosted, no VPS).
 
 `opt` = opcional (lazy getter con fallback). `—` = no aplica. `real` = valor de producción o preview. `placeholder` = valor no funcional usado sólo para que `prisma generate` y `next build` no aborten.
 
@@ -79,7 +79,7 @@ El workflow [.github/workflows/ci.yml](../.github/workflows/ci.yml) es la fuente
 - **`NEXT_PUBLIC_SITE_URL`**: sólo definida en `production` (`https://afiladocs.com`). Previews la omiten a propósito para que [robots.ts](../src/app/robots.ts) devuelva `Disallow: /` y `sitemap.ts` responda `noindex`.
 - **Secretos**: todo `*_SECRET_KEY`, `*_API_KEY`, `*_WEBHOOK_SECRET`, `CRON_SECRET` sólo en scope "Production" + "Preview" (nunca "Development" en Vercel — esos se inyectan vía `.env.local`).
 - **Prisma**: `postinstall: prisma generate` corre en el build de Vercel; `DATABASE_URL` y `DIRECT_URL` deben existir como env vars del proyecto.
-- **Supabase edge**: `NEXT_PUBLIC_SUPABASE_URL` **y** `NEXT_PUBLIC_SUPABASE_ANON_KEY` son ambas obligatorias. Si falta la anon key, `createServerClient` lanza y Vercel responde 500 `MIDDLEWARE_INVOCATION_FAILED` (issue #59). El middleware actual falla cerrado (503 / skip) en lugar de throw. **No inventar** el valor de la key en el repo.
+- **Supabase**: path canónico **Vercel Marketplace Free** linkado al proyecto `afiladocs`. Inyecta `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `DIRECT_URL`. `supabase.afiladocs.com` (self-hosted) está **descatalogado**; no hay VPS. `NEXT_PUBLIC_SUPABASE_URL` **y** `NEXT_PUBLIC_SUPABASE_ANON_KEY` son ambas obligatorias en edge: si falta la anon key, `createServerClient` lanza y Vercel responde 500 `MIDDLEWARE_INVOCATION_FAILED` (issue #59). El middleware actual falla cerrado (503 / skip). **No inventar** keys en el repo — linkar Marketplace y redesplegar.
 - **Sentry**: la integración Vercel+Sentry inyecta `OBSERVABILITY_SENTRY_AUTH_TOKEN`, `_ORG`, `_PROJECT` y `NEXT_PUBLIC_OBSERVABILITY_SENTRY_DSN`. No definirlos a mano.
 
 ## 5. Fallos frecuentes y remedio inmediato
@@ -93,7 +93,7 @@ Registro vivo. Cuando CI falle por un motivo no listado aquí, añade la entrada
 | `Missing required environment variable: X` en build de Vercel | Env nueva en `src/lib/env.ts` sin añadir al proyecto Vercel | Añadir a Preview + Prod desde el dashboard, redeploy |
 | CSP bloquea script en prod | `script-src` sin el nonce correcto tras cambio en [next.config.ts](../next.config.ts) | Ver `guias/guia-seguridad.md` § CSP nonce |
 | Webhook Stripe firma inválida | `STRIPE_WEBHOOK_SECRET` apunta al endpoint equivocado | [runbooks/stripe-webhook-fallido.md](runbooks/stripe-webhook-fallido.md) |
-| Build Vercel OK pero preview/prod 500 en `/` (`MIDDLEWARE_INVOCATION_FAILED`) | Falta `NEXT_PUBLIC_SUPABASE_ANON_KEY` (o URL) en el entorno; `createServerClient` exige ambas | Añadir las env reales en Vercel y redesplegar. Ver [issue #59](https://github.com/Iniciativas-Alexendros/saas-afiladocs/issues/59) y [PRODUCCION-P0.md](../PRODUCCION-P0.md). El middleware ya no debe tirar 500 opaco. |
+| Build Vercel OK pero preview/prod 500 en `/` (`MIDDLEWARE_INVOCATION_FAILED`) | Falta `NEXT_PUBLIC_SUPABASE_ANON_KEY` (o URL); Marketplace no está linkado a `afiladocs` | Linkar **Supabase Free Plan** al proyecto y redesplegar. No inventar JWT. Ver [issue #59](https://github.com/Iniciativas-Alexendros/saas-afiladocs/issues/59) y [PRODUCCION-P0.md](../PRODUCCION-P0.md). |
 
 ## 6. Política de merge
 
