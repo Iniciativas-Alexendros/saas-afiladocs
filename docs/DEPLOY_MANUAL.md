@@ -48,7 +48,7 @@ Obligatorio antes de abrir o actualizar un PR (regla declarada en [CLAUDE.md](..
 npm run ci:local
 ```
 
-Equivale a: `check:env → typecheck → lint → test:coverage → build`. Es exactamente lo que el workflow [ci.yml](../.github/workflows/ci.yml) ejecuta, menos el paso de `npm ci`. Si esto pasa en local, CI debería pasar en el primer intento.
+Equivale a: `check:env → typecheck → lint → test:coverage → build`. Es exactamente lo que el workflow [ci.yml](../.github/workflows/ci.yml) ejecuta, menos el paso de `pnpm install --frozen-lockfile`. Si esto pasa en local, CI debería pasar en el primer intento.
 
 Si el PR toca el esquema Prisma: además `npx prisma migrate dev` contra BD local o Supabase dev.
 
@@ -58,7 +58,7 @@ El workflow [.github/workflows/ci.yml](../.github/workflows/ci.yml) es la fuente
 
 | # | Step | Detecta |
 |---|------|---------|
-| 1 | `Install dependencies` (`npm ci`) | Lockfile desincronizado; `postinstall` de Prisma falla si falta `DATABASE_URL` o `DIRECT_URL` |
+| 1 | `Install dependencies` (`pnpm install --frozen-lockfile`) | Lockfile desincronizado; `postinstall` de Prisma falla si falta `DATABASE_URL` o `DIRECT_URL` |
 | 2 | `Validate .env.example coverage` | Env var nueva referenciada en código pero sin documentar |
 | 3 | `Typecheck` | Errores de tipos |
 | 4 | `Lint` | ESLint 9 flat config (0 errores, 0 warnings nuevos) |
