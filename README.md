@@ -41,13 +41,13 @@ Obligatorias en Vercel **Production** para que el frontal no muera en edge:
 
 | Variable | Rol |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase (self-hosted o Marketplace) |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto **Marketplace** (`*.supabase.co`). `supabase.afiladocs.com` está descatalogado |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima (pública; RLS). **Ausente en prod el 2026-09-23 — issue #59** |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only (Storage / ops). No `NEXT_PUBLIC_*` |
 | `DATABASE_URL` | Pooler Prisma (runtime) |
 | `DIRECT_URL` | Conexión directa (migraciones) |
 
-El código **no inventa** estas claves. Hay que pegarlas desde el dashboard de Supabase o dejar que el Marketplace las inyecte, y redesplegar.
+Path canónico: **Vercel Marketplace Free** linkado al proyecto `afiladocs`. El código **no inventa** estas claves; las inyecta el Marketplace al linkar. No hay VPS / self-hosted.
 
 ---
 
