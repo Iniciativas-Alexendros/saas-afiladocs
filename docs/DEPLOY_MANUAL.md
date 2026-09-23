@@ -67,6 +67,8 @@ El workflow [.github/workflows/ci.yml](../.github/workflows/ci.yml) es la fuente
 
 `concurrency: ci-<ref>` con `cancel-in-progress: true` cancela runs anteriores de la misma rama cuando llega un push nuevo.
 
+**Runner:** `ubuntu-latest` (GitHub-hosted). El label `[self-hosted, ts]` se retiró porque el runner de la org no estaba online y los jobs quedaban en cola indefinida (p. ej. [run 35818279495](https://github.com/Iniciativas-Alexendros/saas-afiladocs/actions/runs/35818279495)). No volver a `self-hosted` hasta confirmar un runner registrado con esas labels.
+
 **Regla**: si este workflow cambia, esta tabla cambia en el mismo PR.
 
 ## 4. Requisitos Vercel

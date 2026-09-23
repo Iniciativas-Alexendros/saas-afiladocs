@@ -14,10 +14,14 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Runner: ubuntu-latest (GitHub-hosted). El label [self-hosted, ts] dejó los
+# jobs en queued durante horas (p. ej. run 35818279495, 2026-09-23) porque no
+# hay runner online. No usar self-hosted hasta que el host vuelva a registrar
+# esas labels. actionlint.yaml conserva las labels por si se reactivan.
 jobs:
   quality:
     name: Typecheck · Lint · Tests · Build
-    runs-on: [self-hosted, ts]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read
@@ -80,7 +84,7 @@ jobs:
 
   security:
     name: Workflow audit
-    runs-on: [self-hosted, ts]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read

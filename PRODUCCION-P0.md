@@ -2,9 +2,12 @@
 
 ## Estado actual
 
-- `afiladocs.com` (frontal Next.js en Vercel): **caído / no responde**.
-- `supabase.afiladocs.com` (Supabase self-hosted con Kong + Let's Encrypt): **caído / no responde**.
-- Este incidente es **P0** y **no se puede restaurar desde el código** de este repositorio.
+Sondeo verificado el **2026-09-23 ~16:40 UTC** (no restaurado):
+
+- `afiladocs.com` (frontal Next.js en Vercel): **no saludable**. DNS resuelve (`64.29.17.65` / `216.198.79.65`). HTTPS responde **500** con `server: Vercel` y `x-vercel-error: MIDDLEWARE_INVOCATION_FAILED`. El edge está vivo; el middleware de la app falla.
+- `www.afiladocs.com`: mismo **500** / `MIDDLEWARE_INVOCATION_FAILED`.
+- `supabase.afiladocs.com` (Supabase self-hosted con Kong + Let's Encrypt): **caído**. DNS resuelve (`191.96.53.6`). HTTPS y `/auth/v1/health` **timeout** (~15 s, HTTP 000).
+- Este incidente es **P0** y **no se puede restaurar desde el código** de este repositorio. La recuperación es out-of-band (dashboard Vercel + host de Supabase).
 
 ## Impacto de negocio
 

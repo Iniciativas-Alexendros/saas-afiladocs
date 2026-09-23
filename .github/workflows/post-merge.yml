@@ -1,8 +1,16 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# post-merge · afiladocs · piloto
+# post-merge · afiladocs
 #
-# Apunta al SHA pinned 093b65a (PR #20 merge
-# en plantillas). Detect-stack identifica TS (Next.js) + Docker (Dockerfile) + Markdown.
+# Histórico: llamaba al reusable
+#   Iniciativas-Alexendros/plantillas/.github/workflows/_lib-post-merge.yml
+#   @093b65aa1cf97c0d96bd7edcd322aa2d7d667424
+# Ese repositorio ya no es resoluble (404 / "Could not resolve to a Repository").
+# GitHub aborta el run en 0 s sin jobs (startup_failure) si el `uses:` no existe.
+#
+# Hasta que plantillas vuelva a estar público/accesible, este workflow es un
+# no-op local en ubuntu-latest: no bloquea main y deja evidencia en el summary.
+# Re-activar: restaurar el job `uses:` (el SHA queda documentado arriba) y
+# quitar el job `noop` de este archivo.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: post-merge
@@ -10,28 +18,42 @@ name: post-merge
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  id-token: write
-  attestations: write
-  checks: write
-  packages: write
-  security-events: write
+  contents: read
 
 concurrency:
   group: post-merge-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  run:
-    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@093b65aa1cf97c0d96bd7edcd322aa2d7d667424 # v1.0.0
-    with:
-      enable_linters: true
-      enable_sbom: true
-      enable_attest: true
-      enable_release: false # afiladocs publica vía Vercel, no via release-please todavía
-    # El reusable no declara secrets en workflow_call; usa GITHUB_TOKEN implícito + OIDC.
+  noop:
+    name: Safe no-op (plantillas unavailable)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Record why this is a no-op
+        run: |
+          set -euo pipefail
+          STATUS="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            https://api.github.com/repos/Iniciativas-Alexendros/plantillas \
+            || true)"
+          {
+            echo "## post-merge no-op"
+            echo
+            echo "El reusable \`Iniciativas-Alexendros/plantillas\` no está disponible."
+            echo "GET /repos/Iniciativas-Alexendros/plantillas → HTTP \`${STATUS}\`."
+            echo
+            echo "Este job completa en verde a propósito para no marcar main en rojo"
+            echo "hasta que el repo de plantillas se restaure o se invendore el reusable."
+            echo
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- SHA: \`${{ github.sha }}\`"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
