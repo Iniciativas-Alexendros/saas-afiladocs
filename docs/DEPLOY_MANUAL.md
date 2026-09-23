@@ -79,6 +79,7 @@ El workflow [.github/workflows/ci.yml](../.github/workflows/ci.yml) es la fuente
 - **`NEXT_PUBLIC_SITE_URL`**: sólo definida en `production` (`https://afiladocs.com`). Previews la omiten a propósito para que [robots.ts](../src/app/robots.ts) devuelva `Disallow: /` y `sitemap.ts` responda `noindex`.
 - **Secretos**: todo `*_SECRET_KEY`, `*_API_KEY`, `*_WEBHOOK_SECRET`, `CRON_SECRET` sólo en scope "Production" + "Preview" (nunca "Development" en Vercel — esos se inyectan vía `.env.local`).
 - **Prisma**: `postinstall: prisma generate` corre en el build de Vercel; `DATABASE_URL` y `DIRECT_URL` deben existir como env vars del proyecto.
+- **Supabase edge**: `NEXT_PUBLIC_SUPABASE_URL` **y** `NEXT_PUBLIC_SUPABASE_ANON_KEY` son ambas obligatorias. Si falta la anon key, `createServerClient` lanza y Vercel responde 500 `MIDDLEWARE_INVOCATION_FAILED` (issue #59). El middleware actual falla cerrado (503 / skip) en lugar de throw. **No inventar** el valor de la key en el repo.
 - **Sentry**: la integración Vercel+Sentry inyecta `OBSERVABILITY_SENTRY_AUTH_TOKEN`, `_ORG`, `_PROJECT` y `NEXT_PUBLIC_OBSERVABILITY_SENTRY_DSN`. No definirlos a mano.
 
 ## 5. Fallos frecuentes y remedio inmediato
@@ -92,7 +93,7 @@ Registro vivo. Cuando CI falle por un motivo no listado aquí, añade la entrada
 | `Missing required environment variable: X` en build de Vercel | Env nueva en `src/lib/env.ts` sin añadir al proyecto Vercel | Añadir a Preview + Prod desde el dashboard, redeploy |
 | CSP bloquea script en prod | `script-src` sin el nonce correcto tras cambio en [next.config.ts](../next.config.ts) | Ver `guias/guia-seguridad.md` § CSP nonce |
 | Webhook Stripe firma inválida | `STRIPE_WEBHOOK_SECRET` apunta al endpoint equivocado | [runbooks/stripe-webhook-fallido.md](runbooks/stripe-webhook-fallido.md) |
-| Build Vercel OK pero preview devuelve 500 en `/` | Env runtime-only ausente (ej. `SUPABASE_SERVICE_ROLE_KEY`) | Los lazy getters sólo fallan en request time — revisar env vars del entorno Preview |
+| Build Vercel OK pero preview/prod 500 en `/` (`MIDDLEWARE_INVOCATION_FAILED`) | Falta `NEXT_PUBLIC_SUPABASE_ANON_KEY` (o URL) en el entorno; `createServerClient` exige ambas | Añadir las env reales en Vercel y redesplegar. Ver [issue #59](https://github.com/Iniciativas-Alexendros/saas-afiladocs/issues/59) y [PRODUCCION-P0.md](../PRODUCCION-P0.md). El middleware ya no debe tirar 500 opaco. |
 
 ## 6. Política de merge
 

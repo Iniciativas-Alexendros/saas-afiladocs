@@ -98,3 +98,15 @@ export const publicEnv = {
     return (process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7)
   },
 } as const
+
+/** Nombres de env públicas de Supabase ausentes o vacías. No devuelve valores. */
+export function missingSupabasePublicEnvKeys(): string[] {
+  const missing: string[] = []
+  if (!publicEnv.supabaseUrl.trim()) missing.push('NEXT_PUBLIC_SUPABASE_URL')
+  if (!publicEnv.supabaseAnonKey.trim()) missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  return missing
+}
+
+export function hasSupabasePublicConfig(): boolean {
+  return missingSupabasePublicEnvKeys().length === 0
+}

@@ -4,7 +4,7 @@ Plataforma de servicios legales digitales B2C (Valencia, España) — plantillas
 
 |             |                                                                                                      |
 | ----------- | ---------------------------------------------------------------------------------------------------- |
-| **Estado**  | Producción activa                                                                                    |
+| **Estado**  | P0 — frontal 500 por env Supabase incompleta ([issue #59](https://github.com/Iniciativas-Alexendros/saas-afiladocs/issues/59), [PRODUCCION-P0.md](PRODUCCION-P0.md)) |
 | **Dominio** | [afiladocs.com](https://afiladocs.com)                                                               |
 | **Stack**   | Next.js 15 · React 19 · TypeScript 5.8 · Tailwind v4 · Prisma 7 · Stripe · Supabase · DocuSeal · n8n |
 
@@ -28,6 +28,26 @@ npm install && cp .env.example .env.local && npm run dev
 | `npm run test`      | Vitest + coverage            |
 | `npm run test:e2e`  | Playwright Chromium          |
 | `npm run ci:local`  | Gate pre-push completo       |
+
+---
+
+## Variables de entorno (producción)
+
+Fuente canónica: [`.env.example`](.env.example) y [`docs/DEPLOY_MANUAL.md`](docs/DEPLOY_MANUAL.md). **No commitear valores reales.**
+
+El edge middleware (`middleware.ts` → `createServerClient`) exige **ambas** env públicas de Supabase. Si falta alguna, Vercel responde `MIDDLEWARE_INVOCATION_FAILED` / HTTP 500. El código actual falla cerrado (503 o skip del refresh) en lugar de lanzar.
+
+Obligatorias en Vercel **Production** para que el frontal no muera en edge:
+
+| Variable | Rol |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase (self-hosted o Marketplace) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima (pública; RLS). **Ausente en prod el 2026-09-23 — issue #59** |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only (Storage / ops). No `NEXT_PUBLIC_*` |
+| `DATABASE_URL` | Pooler Prisma (runtime) |
+| `DIRECT_URL` | Conexión directa (migraciones) |
+
+El código **no inventa** estas claves. Hay que pegarlas desde el dashboard de Supabase o dejar que el Marketplace las inyecte, y redesplegar.
 
 ---
 
