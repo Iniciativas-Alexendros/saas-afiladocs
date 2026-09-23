@@ -1,6 +1,99 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
-import { serverEnv } from '@/lib/env'
+import { missingSupabasePublicEnvKeys, serverEnv } from '@/lib/env'
+
+const AUTH_GATED_PREFIXES = [
+  '/portal',
+  '/ops',
+  '/login',
+  '/registro',
+  '/recuperar-password',
+] as const
+
+function isAuthGatedPath(pathname: string): boolean {
+  return AUTH_GATED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+}
+
+function isInfraApiPath(pathname: string): boolean {
+  return (
+    pathname === '/api/health' ||
+    pathname.startsWith('/api/health/') ||
+    pathname.startsWith('/api/webhooks/') ||
+    pathname.startsWith('/api/cron/')
+  )
+}
+
+function applySecurityHeaders(response: NextResponse, nonce: string, csp: string): NextResponse {
+  response.headers.set('x-nonce', nonce)
+  response.headers.set('Content-Security-Policy', csp)
+  return response
+}
+
+function responseForMissingSupabaseEnv(
+  pathname: string,
+  requestHeaders: Headers,
+  nonce: string,
+  csp: string,
+): NextResponse {
+  if (isAuthGatedPath(pathname)) {
+    return supabaseUnavailablePage(nonce, csp)
+  }
+
+  if (pathname.startsWith('/api/') && !isInfraApiPath(pathname)) {
+    return NextResponse.json(
+      { error: 'service_unavailable', reason: 'supabase_public_env_missing' },
+      {
+        status: 503,
+        headers: {
+          'retry-after': '120',
+          'cache-control': 'no-store',
+          'x-nonce': nonce,
+          'Content-Security-Policy': csp,
+        },
+      },
+    )
+  }
+
+  const skipped = NextResponse.next({ request: { headers: requestHeaders } })
+  skipped.headers.set('x-middleware-skip', 'supabase-session')
+  return applySecurityHeaders(skipped, nonce, csp)
+}
+
+function supabaseUnavailablePage(nonce: string, csp: string): NextResponse {
+  const html = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Servicio no disponible — Afiladocs</title>
+  <style>
+    body{font-family:system-ui,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#0f172a;color:#e2e8f0}
+    main{max-width:36rem;padding:2rem}
+    h1{font-size:1.5rem;margin:0 0 1rem}
+    p{line-height:1.55;color:#cbd5e1}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Servicio temporalmente no disponible</h1>
+    <p>No se puede iniciar la sesión porque falta configuración de autenticación en este deployment. Las páginas públicas pueden seguir accesibles. Operaciones debe completar las variables de entorno en Vercel y redesplegar.</p>
+  </main>
+</body>
+</html>`
+
+  return new NextResponse(html, {
+    status: 503,
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
+      'retry-after': '120',
+      'content-security-policy': csp,
+      'x-nonce': nonce,
+    },
+  })
+}
 
 const SUSPICIOUS_PATH_RE = /(\.\.|\/etc\/|\/proc\/|<script|%3Cscript)/i
 const BOT_UA_RE = /bot|crawl|spider|scan|masscan|zgrab|nuclei|sqlmap|nikto|curl|wget/i
@@ -76,11 +169,21 @@ export async function middleware(request: NextRequest) {
   // Next.js reads CSP from the request header to auto-add nonce to its own <script> tags.
   requestHeaders.set('content-security-policy', csp)
 
-  // 5. Supabase auth session refresh (existing behavior) — pass modified headers through.
+  // 5. Supabase auth session refresh — never throw if public env is missing
+  // (prod 500: "URL and Key are required to create a Supabase client!").
+  const missingSupabase = missingSupabasePublicEnvKeys()
+  if (missingSupabase.length > 0) {
+    console.error(JSON.stringify({
+      event: 'middleware.supabase_env_missing',
+      missing: missingSupabase,
+      path: pathname,
+      ts: new Date().toISOString(),
+    }))
+    return responseForMissingSupabaseEnv(pathname, requestHeaders, nonce, csp)
+  }
+
   const response = await updateSession(request, requestHeaders)
-  response.headers.set('x-nonce', nonce)
-  response.headers.set('Content-Security-Policy', csp)
-  return response
+  return applySecurityHeaders(response, nonce, csp)
 }
 
 export const config = {

@@ -29,6 +29,47 @@ describe('env — publicEnv', () => {
   })
 })
 
+describe('env — hasSupabasePublicConfig', () => {
+  beforeEach(() => {
+    vi.resetModules()
+  })
+
+  it('reports both public keys when they are empty', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '')
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
+    const { missingSupabasePublicEnvKeys, hasSupabasePublicConfig } =
+      await import('@/lib/env')
+    expect(hasSupabasePublicConfig()).toBe(false)
+    expect(missingSupabasePublicEnvKeys()).toEqual([
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    ])
+    vi.unstubAllEnvs()
+  })
+
+  it('reports only the anon key when URL is set', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://supabase.example.com')
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
+    const { missingSupabasePublicEnvKeys, hasSupabasePublicConfig } =
+      await import('@/lib/env')
+    expect(hasSupabasePublicConfig()).toBe(false)
+    expect(missingSupabasePublicEnvKeys()).toEqual([
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    ])
+    vi.unstubAllEnvs()
+  })
+
+  it('is true when URL and anon key are present', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://supabase.example.com')
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'anon-placeholder')
+    const { hasSupabasePublicConfig, missingSupabasePublicEnvKeys } =
+      await import('@/lib/env')
+    expect(hasSupabasePublicConfig()).toBe(true)
+    expect(missingSupabasePublicEnvKeys()).toEqual([])
+    vi.unstubAllEnvs()
+  })
+})
+
 describe('env — serverEnv lazy getters', () => {
   beforeEach(() => {
     vi.resetModules()

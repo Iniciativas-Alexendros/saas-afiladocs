@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 const mockBlockedCountries: { value: string[] } = { value: [] }
+const mockPublicEnv = {
+  supabaseUrl: 'http://localhost',
+  supabaseAnonKey: 'anon',
+}
 
 vi.mock('@/lib/env', () => ({
   serverEnv: {
@@ -9,7 +13,26 @@ vi.mock('@/lib/env', () => ({
       return mockBlockedCountries.value
     },
   },
-  publicEnv: { supabaseUrl: 'http://localhost', supabaseAnonKey: 'anon' },
+  publicEnv: {
+    get supabaseUrl() {
+      return mockPublicEnv.supabaseUrl
+    },
+    get supabaseAnonKey() {
+      return mockPublicEnv.supabaseAnonKey
+    },
+  },
+  missingSupabasePublicEnvKeys() {
+    const missing: string[] = []
+    if (!mockPublicEnv.supabaseUrl.trim()) missing.push('NEXT_PUBLIC_SUPABASE_URL')
+    if (!mockPublicEnv.supabaseAnonKey.trim()) missing.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    return missing
+  },
+  hasSupabasePublicConfig() {
+    return (
+      Boolean(mockPublicEnv.supabaseUrl.trim()) &&
+      Boolean(mockPublicEnv.supabaseAnonKey.trim())
+    )
+  },
 }))
 
 vi.mock('@/lib/supabase/middleware', () => ({
@@ -29,6 +52,8 @@ function makeRequest(url: string, headers: Record<string, string> = {}) {
 describe('middleware', () => {
   beforeEach(() => {
     mockBlockedCountries.value = []
+    mockPublicEnv.supabaseUrl = 'http://localhost'
+    mockPublicEnv.supabaseAnonKey = 'anon'
   })
 
   it('blocks suspicious paths with path traversal pattern', async () => {
@@ -91,5 +116,44 @@ describe('middleware', () => {
       makeRequest('/', { 'x-vercel-ip-country': 'ES' }),
     )
     expect(res.status).not.toBe(403)
+  })
+
+  it('skips Supabase session on public pages when anon key is missing (no 500)', async () => {
+    mockPublicEnv.supabaseAnonKey = ''
+    const { middleware } = await import('../../middleware')
+    const res = await middleware(makeRequest('/'))
+    expect(res.status).toBe(200)
+    expect(res.headers.get('x-middleware-skip')).toBe('supabase-session')
+    expect(res.headers.get('x-nonce')).toBeTruthy()
+  })
+
+  it('returns controlled 503 HTML on /portal when Supabase public env is missing', async () => {
+    mockPublicEnv.supabaseAnonKey = ''
+    const { middleware } = await import('../../middleware')
+    const res = await middleware(makeRequest('/portal/pedidos'))
+    expect(res.status).toBe(503)
+    expect(res.headers.get('content-type')).toContain('text/html')
+    const body = await res.text()
+    expect(body).toContain('Servicio temporalmente no disponible')
+    expect(body).not.toContain('eyJ')
+    expect(body).not.toContain('sk_')
+  })
+
+  it('returns controlled 503 JSON on gated APIs when Supabase public env is missing', async () => {
+    mockPublicEnv.supabaseUrl = ''
+    const { middleware } = await import('../../middleware')
+    const res = await middleware(makeRequest('/api/checkout'))
+    expect(res.status).toBe(503)
+    const body = await res.json() as { error: string; reason: string }
+    expect(body.error).toBe('service_unavailable')
+    expect(body.reason).toBe('supabase_public_env_missing')
+  })
+
+  it('does not 503 infra APIs when Supabase public env is missing', async () => {
+    mockPublicEnv.supabaseAnonKey = ''
+    const { middleware } = await import('../../middleware')
+    const res = await middleware(makeRequest('/api/health'))
+    expect(res.status).toBe(200)
+    expect(res.headers.get('x-middleware-skip')).toBe('supabase-session')
   })
 })

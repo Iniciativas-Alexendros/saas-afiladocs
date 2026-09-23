@@ -10,7 +10,7 @@
 1. Rama desde `main` (`feat/…`, `fix/…`, `docs/…`, `chore/…`).
 2. Copia `.env.example` → `.env.local` (nunca commits de secretos).
 3. `pnpm install && pnpm typecheck && pnpm lint && pnpm test`
-4. PR con CI verde (self-hosted + Vercel preview).
+4. PR con CI verde (GitHub-hosted `ubuntu-latest` + Vercel preview).
 
 ## Commits
 
