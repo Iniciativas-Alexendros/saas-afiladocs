@@ -25,6 +25,42 @@ function isInfraApiPath(pathname: string): boolean {
   )
 }
 
+function applySecurityHeaders(response: NextResponse, nonce: string, csp: string): NextResponse {
+  response.headers.set('x-nonce', nonce)
+  response.headers.set('Content-Security-Policy', csp)
+  return response
+}
+
+function responseForMissingSupabaseEnv(
+  pathname: string,
+  requestHeaders: Headers,
+  nonce: string,
+  csp: string,
+): NextResponse {
+  if (isAuthGatedPath(pathname)) {
+    return supabaseUnavailablePage(nonce, csp)
+  }
+
+  if (pathname.startsWith('/api/') && !isInfraApiPath(pathname)) {
+    return NextResponse.json(
+      { error: 'service_unavailable', reason: 'supabase_public_env_missing' },
+      {
+        status: 503,
+        headers: {
+          'retry-after': '120',
+          'cache-control': 'no-store',
+          'x-nonce': nonce,
+          'Content-Security-Policy': csp,
+        },
+      },
+    )
+  }
+
+  const skipped = NextResponse.next({ request: { headers: requestHeaders } })
+  skipped.headers.set('x-middleware-skip', 'supabase-session')
+  return applySecurityHeaders(skipped, nonce, csp)
+}
+
 function supabaseUnavailablePage(nonce: string, csp: string): NextResponse {
   const html = `<!doctype html>
 <html lang="es">
@@ -143,37 +179,11 @@ export async function middleware(request: NextRequest) {
       path: pathname,
       ts: new Date().toISOString(),
     }))
-
-    if (isAuthGatedPath(pathname)) {
-      return supabaseUnavailablePage(nonce, csp)
-    }
-
-    if (pathname.startsWith('/api/') && !isInfraApiPath(pathname)) {
-      return NextResponse.json(
-        { error: 'service_unavailable', reason: 'supabase_public_env_missing' },
-        {
-          status: 503,
-          headers: {
-            'retry-after': '120',
-            'cache-control': 'no-store',
-            'x-nonce': nonce,
-            'Content-Security-Policy': csp,
-          },
-        },
-      )
-    }
-
-    const skipped = NextResponse.next({ request: { headers: requestHeaders } })
-    skipped.headers.set('x-nonce', nonce)
-    skipped.headers.set('Content-Security-Policy', csp)
-    skipped.headers.set('x-middleware-skip', 'supabase-session')
-    return skipped
+    return responseForMissingSupabaseEnv(pathname, requestHeaders, nonce, csp)
   }
 
   const response = await updateSession(request, requestHeaders)
-  response.headers.set('x-nonce', nonce)
-  response.headers.set('Content-Security-Policy', csp)
-  return response
+  return applySecurityHeaders(response, nonce, csp)
 }
 
 export const config = {
