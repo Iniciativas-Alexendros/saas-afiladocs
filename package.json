@@ -22,7 +22,9 @@
     "prepare": "husky",
     "analyze": "ANALYZE=true next build",
     "check:env": "tsx scripts/check-env-example.ts",
-    "ci:local": "npm run check:env && npm run typecheck && npm run lint && npm run test:coverage && npm run build"
+    "smoke": "tsx scripts/smoke.ts",
+    "validate": "pnpm run check:env && pnpm run typecheck && pnpm run lint && pnpm run test:coverage && pnpm run build && pnpm run smoke",
+    "ci:local": "pnpm run validate"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [

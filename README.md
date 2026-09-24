@@ -1,6 +1,20 @@
 # Afiladocs
 
+### Propósito de este documento
+
+- **Objetivos:** Presentar el producto, el arranque local y los contratos
+  (CI, docs, seguridad) sin sustituir runbooks ni el índice operativo.
+- **Estructura:** Estado → desarrollo → env → arquitectura → documentación.
+- **Contenido a integrar según contexto:** Adapta stack y comandos de este
+  SaaS (`pnpm`). No copies un README de sitio estático. Los incidentes
+  viven en [SUPPORT.md](SUPPORT.md) y [docs/runbooks/](docs/runbooks/).
+
 Plataforma de servicios legales digitales B2C (Valencia, España) — plantillas legales rellenables vía DocuSeal + revisiones expertas humanas.
+
+Contratos: [AGENTS.md](AGENTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md) ·
+[CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) ·
+[SUPPORT.md](SUPPORT.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ·
+[DECISIONS.md](DECISIONS.md).
 
 |             |                                                                                                      |
 | ----------- | ---------------------------------------------------------------------------------------------------- |
@@ -13,21 +27,26 @@ Plataforma de servicios legales digitales B2C (Valencia, España) — plantillas
 ## Desarrollo
 
 ```bash
-git clone git@github.com:alexendros/afiladocs.git && cd afiladocs
-npm install && cp .env.example .env.local && npm run dev
+git clone git@github.com:Iniciativas-Alexendros/saas-afiladocs.git && cd saas-afiladocs
+pnpm install && cp .env.example .env.local && pnpm dev
 ```
 
 ### Comandos
 
-| Comando             | Uso                          |
-| ------------------- | ---------------------------- |
-| `npm run dev`       | Turbopack dev server `:3000` |
-| `npm run build`     | Build producción             |
-| `npm run typecheck` | `tsc --noEmit`               |
-| `npm run lint`      | ESLint 9 flat config         |
-| `npm run test`      | Vitest + coverage            |
-| `npm run test:e2e`  | Playwright Chromium          |
-| `npm run ci:local`  | Gate pre-push completo       |
+| Comando              | Uso                                          |
+| -------------------- | -------------------------------------------- |
+| `pnpm dev`           | Turbopack dev server `:3000`                 |
+| `pnpm run build`     | Build producción (`.next`)                   |
+| `pnpm run typecheck` | `tsc --noEmit`                               |
+| `pnpm run lint`      | ESLint 9 flat config                         |
+| `pnpm run test`      | Vitest                                       |
+| `pnpm run test:coverage` | Vitest + coverage (gate ≥ 70 % críticos) |
+| `pnpm run smoke`     | `GET /api/health` sobre `next start`         |
+| `pnpm run test:e2e`  | Playwright Chromium                          |
+| `make validate`      | lint + test + build + smoke                  |
+| `pnpm run ci:local`  | Alias de `validate`                          |
+
+CI principal: jobs `quality`, `test`, `build`, `smoke` (más `security` de producto).
 
 ---
 

@@ -1,0 +1,14 @@
+# CODEOWNERS · saas-afiladocs
+# Documentación: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Propietario por defecto de todo el repositorio
+*                       @Alexendros
+
+# Documentos críticos
+/SECURITY.md            @Alexendros
+/LICENSE                @Alexendros
+/CODE_OF_CONDUCT.md     @Alexendros
+/SUPPORT.md             @Alexendros
+/.github/               @Alexendros
+/docs/architecture/     @Alexendros
+/docs/runbooks/         @Alexendros

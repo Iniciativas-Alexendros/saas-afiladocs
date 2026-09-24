@@ -1,5 +1,13 @@
 # Guía transversal — Workflows e integraciones
 
+### Propósito de este documento
+
+- **Objetivos:** Fijar contratos de Stripe, DocuSeal, Verifactu, n8n y crons.
+- **Estructura:** Panorama → reglas por integración.
+- **Contenido a integrar según contexto:** No sustituyas los runbooks
+  (`stripe-webhook-fallido`, `recovery-docuseal`). Los jobs CI se llaman
+  `quality` / `test` / `build` / `smoke`.
+
 Aplica a todo cambio en `src/app/api/webhooks/`, `src/app/api/cron/`, `src/lib/stripe/`, `src/lib/signing/`, `src/lib/verifactu/` y cualquier envío a n8n.
 
 ## 1. Panorama de integraciones

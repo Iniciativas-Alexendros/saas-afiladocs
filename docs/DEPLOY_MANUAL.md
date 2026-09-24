@@ -1,6 +1,14 @@
 # Manual de Deploy — Afiladocs
 
-**Última revisión:** 2026-09-23
+### Propósito de este documento
+
+- **Objetivos:** Fijar la matriz de env vars, el contrato CI y los fallos
+  frecuentes de deploy. Si un PR rompe este contrato, CI debe detectarlo.
+- **Estructura:** Matriz → pre-push → jobs CI → Vercel → fallos → merge.
+- **Contenido a integrar según contexto:** Actualiza la tabla de jobs si
+  cambia `ci.yml`. No sustituyas los runbooks de rollback o secretos.
+
+**Última revisión:** 2026-09-24
 
 Documento único con los requisitos que exige cada entorno (local, CI, Vercel Preview y Vercel Prod), el checklist obligatorio antes de hacer push, y el registro vivo de fallos frecuentes. Si un PR rompe este contrato, CI debe detectarlo antes del merge.
 
@@ -48,22 +56,21 @@ Obligatorio antes de abrir o actualizar un PR (regla declarada en [CLAUDE.md](..
 npm run ci:local
 ```
 
-Equivale a: `check:env → typecheck → lint → test:coverage → build`. Es exactamente lo que el workflow [ci.yml](../.github/workflows/ci.yml) ejecuta, menos el paso de `pnpm install --frozen-lockfile`. Si esto pasa en local, CI debería pasar en el primer intento.
+Equivale a: `check:env → typecheck → lint → test:coverage → build → smoke`. Es el mismo contrato que los jobs `quality` / `test` / `build` / `smoke` de [ci.yml](../.github/workflows/ci.yml), menos `pnpm install --frozen-lockfile`. Si esto pasa en local, CI debería pasar en el primer intento.
 
 Si el PR toca el esquema Prisma: además `npx prisma migrate dev` contra BD local o Supabase dev.
 
 ## 3. Qué verifica CI (contrato)
 
-El workflow [.github/workflows/ci.yml](../.github/workflows/ci.yml) es la fuente única de verdad. Steps actuales:
+El workflow [.github/workflows/ci.yml](../.github/workflows/ci.yml) es la fuente única de verdad. Jobs actuales:
 
-| # | Step | Detecta |
+| Job | Qué ejecuta | Detecta |
 |---|------|---------|
-| 1 | `Install dependencies` (`pnpm install --frozen-lockfile`) | Lockfile desincronizado; `postinstall` de Prisma falla si falta `DATABASE_URL` o `DIRECT_URL` |
-| 2 | `Validate .env.example coverage` | Env var nueva referenciada en código pero sin documentar |
-| 3 | `Typecheck` | Errores de tipos |
-| 4 | `Lint` | ESLint 9 flat config (0 errores, 0 warnings nuevos) |
-| 5 | `Tests` (`test:coverage`) | Regresiones unitarias + umbrales de cobertura |
-| 6 | `Build` (`next build`) | Rutas App Router rotas, server components mal tipados, CSP inválida, bundles que no compilan |
+| `quality` | `check:env`, `typecheck`, `lint`, `pnpm audit` informativo | Env sin documentar, tipos, ESLint, advisories |
+| `test` | `test:coverage` + artefacto `coverage/` | Regresiones unitarias + umbrales de cobertura |
+| `build` | `next build` + artefacto `.next` | Rutas App Router rotas, RSC mal tipados, CSP, bundles |
+| `smoke` | `pnpm run smoke` sobre el artefacto (`GET /api/health`) | Runtime mínimo no arranca o health no responde `ok` |
+| `security` | actionlint + zizmor | Workflows inseguros (job de producto, no se renombra) |
 
 `concurrency: ci-<ref>` con `cancel-in-progress: true` cancela runs anteriores de la misma rama cuando llega un push nuevo.
 

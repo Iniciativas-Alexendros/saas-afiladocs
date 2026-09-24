@@ -1,5 +1,14 @@
 # Seguridad — afiladocs
 
+### Propósito de este documento
+
+- **Objetivos:** Definir el canal privado de avisos de seguridad y el
+  alcance del programa (sin issues públicos explotables).
+- **Estructura:** Cómo reportar → alcance.
+- **Contenido a integrar según contexto:** Adapta el correo
+  (`ops@afiladocs.com`) y el perímetro de este SaaS. No copies el SECURITY
+  de un sitio estático. Rotación operativa: [docs/runbooks/rotacion-secretos.md](docs/runbooks/rotacion-secretos.md).
+
 ## Reportar vulnerabilidades
 
 Envía un informe privado a **ops@afiladocs.com** (no abras issues públicos con detalles explotables).

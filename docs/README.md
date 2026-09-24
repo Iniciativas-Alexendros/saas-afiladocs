@@ -1,9 +1,23 @@
 # Documentación Afiladocs
 
-**Última revisión:** 2026-04-19
-**Próxima re-auditoría:** 2026-05-19 (o al cierre de la siguiente fase).
+### Propósito de este documento
+
+- **Objetivos:** Indexar la documentación operativa, ADRs, guías y runbooks
+  y apuntar a los contratos de la raíz.
+- **Estructura:** Índice operativo → runbooks (enlace, no reescritura) →
+  roadmap → umbrales → cómo contribuir.
+- **Contenido a integrar según contexto:** No muevas ni reescribas
+  runbooks vivos. Las guías canónicas siguen en `docs/guias/`;
+  `docs/guides/` es el alias de flota.
+
+**Última revisión:** 2026-09-24
+**Próxima re-auditoría:** al cierre de la siguiente fase.
 
 Hub único de la documentación técnica y operativa del proyecto. Sustituye al viejo `docs-INDEX.md`. Los docs viven organizados en 3 ejes: **operativos** (cómo funciona el sistema hoy), **runbooks** (qué hacer cuando algo va mal) y **roadmap** (qué falta por hacer).
+
+En la raíz: [README.md](../README.md), [AGENTS.md](../AGENTS.md),
+[ARCHITECTURE.md](../ARCHITECTURE.md), [CONTRIBUTING.md](../CONTRIBUTING.md),
+[SECURITY.md](../SECURITY.md), [SUPPORT.md](../SUPPORT.md).
 
 ## Tabla de contenidos
 
@@ -28,6 +42,8 @@ Describen la arquitectura vigente. Primer sitio al que acudir antes de tocar có
 | [CATALOG.md](CATALOG.md) | Ciclo de vida de los 10 SKUs: draft → DocuSeal → Stripe → live + script `audit-catalog.ts` |
 | [n8n-workflows.md](n8n-workflows.md) | Los 5 workflows n8n: monitores normativos, contact relay, error router |
 | [DEPLOY_MANUAL.md](DEPLOY_MANUAL.md) | Matriz de env vars, contrato CI, requisitos Vercel, fallos frecuentes |
+| [architecture/](architecture/) | ADRs y capas (`ARCHITECTURE.md`) |
+| [guides/](guides/) | Alias de flota → `guias/` (sin duplicar cuerpo) |
 | [estado.html](estado.html) | Playground interactivo del estado y go-live (checklist P0-P3, DNS, catálogo, autoridad repo↔Notion) |
 
 ## Runbooks de incidentes
@@ -81,12 +97,13 @@ Estado del producto y hoja de ruta a 6 fases. Sólo contienen trabajo pendiente 
 
 Son áreas con lógica de negocio crítica (pagos, pedidos, facturación RD 1007/2023, API de frontera). El resto del código no tiene gate global — se prioriza calidad enfocada en dominios sensibles.
 
-**Gates obligatorios antes de declarar una tarea completa** (definidos en [CLAUDE.md](../CLAUDE.md)):
+**Gates obligatorios antes de declarar una tarea completa** (definidos en [CLAUDE.md](../CLAUDE.md) y CI `quality` / `test` / `build` / `smoke`):
 
-1. `npm run typecheck` — 0 errores.
-2. `npm run lint` — 0 errores.
-3. `npm run build` — build limpio.
-4. `npm run test` — 100% verde.
+1. `pnpm run typecheck` — 0 errores.
+2. `pnpm run lint` — 0 errores.
+3. `pnpm run test:coverage` — 100 % verde + umbrales críticos.
+4. `pnpm run build` — build limpio.
+5. `pnpm run smoke` — `GET /api/health` ok.
 
 Detalles operativos y roles de revisor en [guias/guia-calidad.md](guias/guia-calidad.md).
 

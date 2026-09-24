@@ -1,5 +1,15 @@
 # Soporte Afiladocs
 
+### Propósito de este documento
+
+- **Objetivos:** Señalar canales de soporte y los runbooks vivos sin
+  sustituir su contenido operativo.
+- **Estructura:** Contacto → antes de reportar → tabla de runbooks →
+  guías → stack.
+- **Contenido a integrar según contexto:** No reescribas los runbooks ni
+  cambies los canales. Si un incidente tiene receta, enlázala; no la
+  dupliques aquí.
+
 ## Canales de contacto
 
 - **Clientes:** formulario en <https://afiladocs.com/contacto> o email a soporte.

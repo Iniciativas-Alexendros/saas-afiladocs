@@ -1,5 +1,13 @@
 # Guía transversal — Seguridad y manejo de errores
 
+### Propósito de este documento
+
+- **Objetivos:** Fijar CSP, Zod, RLS y RGPD que todo PR debe respetar.
+- **Estructura:** Controles vigentes → checklist.
+- **Contenido a integrar según contexto:** No sustituyas
+  `docs/runbooks/rotacion-secretos.md` ni `incidente-rls.md`. Actualiza
+  esta guía si cambias middleware o `src/lib/env.ts`.
+
 Aplica a cualquier cambio que toque `src/app/api/**`, `src/lib/**` server-side, middleware o configuración HTTP. **F1 cerrada (2026-04-14)**: CSP con nonce por request vive en [middleware.ts](../../middleware.ts); headers estáticos restantes siguen en [next.config.ts](../../next.config.ts).
 
 ## 1. Contrato de respuesta API
