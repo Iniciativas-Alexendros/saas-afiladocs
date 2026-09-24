@@ -18,7 +18,8 @@ docs, ops, performance, deuda técnica).
 - **Plataforma (canon P1+P2)** — 2026-09-24
   - CI principal normalizado a jobs `quality`, `test`, `build`, `smoke`.
   - `Makefile` (`lint` / `test` / `build` / `smoke` / `validate`) y
-    `pnpm run smoke` (`GET /api/health`).
+    `pnpm run smoke` (`GET /api/health`). Artefacto `.next` con
+    `include-hidden-files: true`.
   - Contratos: `AGENTS.md`, `ARCHITECTURE.md`, `CODE_OF_CONDUCT.md`,
     `CODEOWNERS`, ADRs en `docs/architecture/decisions/`.
   - Renovate standalone (`npm` + `github-actions`). Se conserva `SUPPORT.md`
