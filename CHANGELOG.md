@@ -1,9 +1,29 @@
 # Changelog
 
+### Propósito de este documento
+
+- **Objetivos:** Registrar cambios significativos con Keep a Changelog,
+  sin borrar el historial de fases.
+- **Estructura:** Unreleased → versión en preparación → histórico.
+- **Contenido a integrar según contexto:** Añade entradas bajo Unreleased.
+  No reescribas fases cerradas. semantic-release no está activo en este repo.
+
 Registro de cambios significativos del proyecto Afiladocs. El formato sigue una
 variante práctica de [Keep a Changelog](https://keepachangelog.com/):
 versión semántica, fecha ISO y notas agrupadas por área (seguridad, features,
 docs, ops, performance, deuda técnica).
+
+## [Unreleased]
+
+- **Plataforma (canon P1+P2)** — 2026-09-24
+  - CI principal normalizado a jobs `quality`, `test`, `build`, `smoke`.
+  - `Makefile` (`lint` / `test` / `build` / `smoke` / `validate`) y
+    `pnpm run smoke` (`GET /api/health`). Artefacto `.next` con
+    `include-hidden-files: true`.
+  - Contratos: `AGENTS.md`, `ARCHITECTURE.md`, `CODE_OF_CONDUCT.md`,
+    `CODEOWNERS`, ADRs en `docs/architecture/decisions/`.
+  - Renovate standalone (`npm` + `github-actions`). Se conserva `SUPPORT.md`
+    y los runbooks vivos.
 
 ## [1.0.0] — en preparación (P0b)
 

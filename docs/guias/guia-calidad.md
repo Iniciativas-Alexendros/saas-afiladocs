@@ -1,5 +1,12 @@
 # Guía transversal — Calidad de código y documentación
 
+### Propósito de este documento
+
+- **Objetivos:** Fijar linters, tests, cobertura y el checklist de PR.
+- **Estructura:** Stack → comandos → TypeScript → carpetas → CI.
+- **Contenido a integrar según contexto:** Los jobs de CI se llaman
+  `quality` / `test` / `build` / `smoke`. No reescribas runbooks.
+
 Aplica a todo el repo. Define las normas que cualquier PR debe respetar antes de llegar a revisión.
 
 ## 1. Stack de calidad (ya configurado)
@@ -12,10 +19,11 @@ Aplica a todo el repo. Define las normas que cualquier PR debe respetar antes de
 ## 2. Comandos obligatorios antes de declarar una tarea completa
 
 ```bash
-npm run typecheck   # 0 errores
-npm run lint        # 0 errores, 0 warnings nuevos
-npm run build       # build limpio
-npm run test:coverage
+pnpm run typecheck   # 0 errores
+pnpm run lint        # 0 errores, 0 warnings nuevos
+pnpm run test:coverage
+pnpm run build       # build limpio
+pnpm run smoke       # GET /api/health
 ```
 
 Este bloque está en [CLAUDE.md](../../CLAUDE.md) como regla absoluta. Ningún cambio se considera terminado sin pasar los 4.
@@ -92,12 +100,14 @@ Los docs operativos se crean en F2; hasta entonces, dejar nota en `docs/README.m
 
 ## 10. CI/CD
 
-- Pipeline CI pendiente de reconfigurar en `.github/workflows/` tras descatalogar GitLab (2026-04-14). Gates obligatorios al reintroducirlo: SAST, Secret Detection, Dependency Scanning.
-- Scripts nuevos de calidad (`depcheck`, `ts-prune`, bundle analyzer): integrar como job opcional primero, obligatorio tras 2 semanas sin falsos positivos.
+- Pipeline en `.github/workflows/ci.yml` con jobs `quality`, `test`,
+  `build`, `smoke` (más `security`: actionlint + zizmor).
+- Equivalente local: `make validate` / `pnpm run ci:local`.
+- Scripts extra (`depcheck`, `ts-prune`, bundle analyzer): opcionales.
 
 ## 11. Checklist de aceptación de PR
 
-- [ ] `typecheck` + `lint` + `test:coverage` + `build` en verde.
+- [ ] `typecheck` + `lint` + `test:coverage` + `build` + `smoke` en verde.
 - [ ] Cobertura de módulos críticos tocados ≥ 70%.
 - [ ] Sin `any`, sin `@ts-ignore` sin justificar.
 - [ ] Docs actualizados si el cambio lo requiere.

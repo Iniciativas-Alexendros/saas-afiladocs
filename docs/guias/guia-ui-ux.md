@@ -1,5 +1,12 @@
 # Guía transversal — UI/UX y design system
 
+### Propósito de este documento
+
+- **Objetivos:** Fijar componentes, naming y accesibilidad de la UI.
+- **Estructura:** Stack visual → convenciones → checklist.
+- **Contenido a integrar según contexto:** No copies un design system de
+  otro sitio. shadcn/ui es el único sistema. No reescribas `docs/UI_GUIDE.md`.
+
 Aplica a todo cambio visual o de interacción en `src/app/**` y `src/components/**`. Define qué componentes usar, cómo nombrarlos y qué convenciones mantener.
 
 ## 1. Stack visual (fijo, no cambiar sin plan)
