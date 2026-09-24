@@ -5,6 +5,7 @@
 
 import { spawn, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 const PORT = process.env.SMOKE_PORT ?? '3000'
 const BASE = (process.env.SMOKE_BASE_URL ?? `http://127.0.0.1:${PORT}`).replace(
@@ -59,7 +60,11 @@ async function main(): Promise<void> {
     if (!existsSync('.next')) {
       throw new Error('smoke: falta .next — ejecuta `pnpm run build` primero')
     }
-    child = spawn('pnpm', ['exec', 'next', 'start', '-p', PORT], {
+    const nextBin = resolve(process.cwd(), 'node_modules/next/dist/bin/next')
+    if (!existsSync(nextBin)) {
+      throw new Error(`smoke: no encuentro ${nextBin} — ejecuta pnpm install`)
+    }
+    child = spawn(process.execPath, [nextBin, 'start', '-p', PORT], {
       stdio: 'inherit',
       env: { ...process.env, PORT, NODE_ENV: 'production' },
     })
