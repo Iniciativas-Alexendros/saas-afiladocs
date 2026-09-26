@@ -127,13 +127,18 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Pack Next.js build
+        # tar preserva los symlinks de pnpm en .next/node_modules (trazas de
+        # externals como @prisma/client). upload-artifact los materializaría
+        # como copias y rompería la resolución de `.prisma/client` en el smoke.
+        run: tar -czf next-build.tgz .next
+
       - name: Upload Next.js build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: next-build
-          path: .next
+          path: next-build.tgz
           if-no-files-found: error
-          include-hidden-files: true
           retention-days: 3
 
   smoke:
@@ -161,7 +166,9 @@ jobs:
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: next-build
-          path: .next
+
+      - name: Unpack Next.js build
+        run: tar -xzf next-build.tgz
 
       - name: Smoke — /api/health
         # Sin URL/anon de Supabase el middleware no llama a placeholder.supabase.co
