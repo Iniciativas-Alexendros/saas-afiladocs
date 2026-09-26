@@ -19,6 +19,15 @@ Sondeo verificado el **2026-09-23 ~16:40 UTC** (no restaurado):
 
 El middleware (merge #60) falla cerrado si faltan env públicas: 503 controlado en rutas de auth, skip en páginas públicas. **No restaura** el frontal hasta que Marketplace inyecte las keys y se redespliegue.
 
+## Sondeo 2026-09-26 (16:15 CEST / 14:15 UTC) — frontal mitigado, verificar env
+
+- `GET https://afiladocs.com/` → **200**, `server: Vercel`, `x-vercel-cache: HIT`, sin `x-vercel-error`, sin `MIDDLEWARE_INVOCATION_FAILED`.
+- `GET https://afiladocs.com/tienda` → **200**, `x-vercel-cache: MISS`, `cache-control: private, no-cache`.
+- `GET https://afiladocs.com/api/health` (UA navegador) → **200** `{"status":"ok","ts":"2026-09-26T14:15:39.620Z","version":"unknown"}`.
+- Nota: con UA `curl`/`wget`, `/api/*` devuelve **403 Forbidden** por el filtro antibot del middleware (esperado, no es P0). El smoke usa UA propio.
+- `GET https://www.afiladocs.com/` → **307** a apex. Correcto.
+- Conclusión: el frontal **ya no está en 500**. Estado: **mitigado / verificar env**. Queda confirmar en Vercel que el recurso Marketplace está linkado (no `projects: []`), redesplegar `main` y que los logs ya no muestran "URL and Key are required". No cerrar #59 hasta ese smoke post-Marketplace.
+
 ## Causa confirmada (runtime, no inventar secretos)
 
 Deploy production **READY** `dpl_DH8JkqbqDCEkbwqbCkVUNKemJs7J` (commit `17665b4f`). Logs de edge-middleware:
@@ -29,12 +38,12 @@ Error: Your project's URL and Key are required to create a Supabase client!
 
 Inventario Vercel (34 envs), **sin valores**:
 
-| Variable | Production | Notas |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | presente | No basta: el cliente exige URL **y** Key |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **ausente** | Causa directa del throw en `createServerClient` |
-| `SUPABASE_SERVICE_ROLE_KEY` | **ausente** | Storage / ops server-side |
-| `DATABASE_URL` / `DIRECT_URL` | vacías o no inyectadas | Prisma runtime; Marketplace sin link |
+| Variable                        | Production             | Notas                                           |
+| ------------------------------- | ---------------------- | ----------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | presente               | No basta: el cliente exige URL **y** Key        |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **ausente**            | Causa directa del throw en `createServerClient` |
+| `SUPABASE_SERVICE_ROLE_KEY`     | **ausente**            | Storage / ops server-side                       |
+| `DATABASE_URL` / `DIRECT_URL`   | vacías o no inyectadas | Prisma runtime; Marketplace sin link            |
 
 **Acción:** en Vercel → proyecto `afiladocs` → Storage / Integrations → linkar **Supabase Free Plan** al proyecto (Preview + Production). Dejar que el Marketplace escriba las env. Redesplegar `main`. **No pegar placeholders ni inventar JWT.**
 
